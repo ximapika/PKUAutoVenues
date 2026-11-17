@@ -27,6 +27,7 @@ def main(
     target_times: list[tuple[str, int]],
     preferred_spaces: list[str],
     skip_pay: bool,
+    random_spaces: bool = False,
 ):
     logger = Logger("main")
     logger.info(f"Running: {' '.join(sys.argv)}")
@@ -41,6 +42,7 @@ def main(
             f"  - begin at {begin_time}, {f'{slots_count} consecutive slots' if slots_count > 1 else 'single slot'}"
         )
     logger.info(f"Preferred spaces: {preferred_spaces}")
+    logger.info(f"Preferred space selection: {'random' if random_spaces else 'ordered'}")
     logger.info(f"Auto payment with campus card: {not skip_pay}")
     logger.breathe()
 
@@ -337,10 +339,17 @@ def main(
                     )
                     logger.breathe()
 
-                    for space in preferred_spaces:
-                        if space in available_space_to_trades:
-                            selected_space = space
-                            break
+                    available_preferred_spaces = [
+                        space
+                        for space in dict.fromkeys(preferred_spaces)
+                        if space in available_space_to_trades
+                    ]
+                    if available_preferred_spaces:
+                        selected_space = (
+                            random.choice(available_preferred_spaces)
+                            if random_spaces
+                            else available_preferred_spaces[0]
+                        )
                     else:
                         selected_space = random.choice(
                             list(available_space_to_trades.keys())
@@ -504,6 +513,11 @@ if __name__ == "__main__":
         help="Preferred space names (optional), e.g. 4号 5 (abbr for 5号)",
     )
     parser.add_argument(
+        "--random-spaces",
+        action="store_true",
+        help="Treat preferred spaces as equal and randomly choose an available one",
+    )
+    parser.add_argument(
         "--skip-pay",
         action="store_true",
         help="Skip auto payment, need to manually pay within 10 minutes",
@@ -580,4 +594,5 @@ if __name__ == "__main__":
         target_times=target_times,
         preferred_spaces=preferred_spaces,
         skip_pay=args.skip_pay,
+        random_spaces=args.random_spaces,
     )
