@@ -28,6 +28,7 @@ def main(
     preferred_spaces: list[str],
     skip_pay: bool,
     random_spaces: bool = False,
+    random_times: bool = False,
 ):
     logger = Logger("main")
     logger.info(f"Running: {' '.join(sys.argv)}")
@@ -41,6 +42,7 @@ def main(
         logger.info(
             f"  - begin at {begin_time}, {f'{slots_count} consecutive slots' if slots_count > 1 else 'single slot'}"
         )
+    logger.info(f"Target time selection: {'random' if random_times else 'ordered'}")
     logger.info(f"Preferred spaces: {preferred_spaces}")
     logger.info(f"Preferred space selection: {'random' if random_spaces else 'ordered'}")
     logger.info(f"Auto payment with campus card: {not skip_pay}")
@@ -285,7 +287,12 @@ def main(
 
                 spaces_res_info: list[dict] = res_date_space_info[target_date]
 
-                for begin_time, slots_count in target_times:
+                time_options = target_times
+                if random_times:
+                    time_options = list(dict.fromkeys(target_times))
+                    random.shuffle(time_options)
+
+                for begin_time, slots_count in time_options:
                     if begin_time not in begin_time_to_slot_idx:
                         logger.warning(
                             f"('{begin_time}', {slots_count}) Begin time {begin_time} not found in spaceTimeInfo, skipping"
@@ -513,6 +520,11 @@ if __name__ == "__main__":
         help="Preferred space names (optional), e.g. 4号 5 (abbr for 5号)",
     )
     parser.add_argument(
+        "--random-times",
+        action="store_true",
+        help="Treat time plans as equal and randomly choose an available one",
+    )
+    parser.add_argument(
         "--random-spaces",
         action="store_true",
         help="Treat preferred spaces as equal and randomly choose an available one",
@@ -595,4 +607,5 @@ if __name__ == "__main__":
         preferred_spaces=preferred_spaces,
         skip_pay=args.skip_pay,
         random_spaces=args.random_spaces,
+        random_times=args.random_times,
     )
